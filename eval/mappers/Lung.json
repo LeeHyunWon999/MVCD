@@ -121,7 +121,10 @@
       "Factor 3: Smoking History": [],
       "Documentation of smoking history": [],
       "Burden of Tobacco Exposure": [],
-      "Tobacco smoking exposure": []
+      "Tobacco smoking exposure": [],
+      "Smoking Status Confirmation": [
+        "run4_selected_Lung_seed00"
+      ]
     },
     "lesion": {
       "Lung Lesion Characteristics": [],
@@ -490,7 +493,9 @@
       "Distribution of Pulmonary Disease": []
     },
     "diagnosis": {
-      "score": []
+      "score": [
+        "run4_selected_Lung_seed00"
+      ]
     }
   },
   "compound": {
@@ -1517,7 +1522,9 @@
     "Clinical Finding Profile": [],
     "Redundant Text Duplication": [],
     "Computed Tomography (CT) Modality": [],
-    "Chest Imaging Modality": [],
+    "Chest Imaging Modality": [
+      "run4_selected_Lung_seed00"
+    ],
     "Unique Instance ID": [],
     "Active Known Cancer": [],
     "Distinct Disease Type": [],
@@ -2320,7 +2327,22 @@
     "X-ray Purpose": [],
     "Clinical Urgency": [],
     "Anatomical Region of Focus (Inter-organ Mismatch)": [],
-    "Complexity of Secondary/Metastatic Involvement": []
+    "Complexity of Secondary/Metastatic Involvement": [],
+    "Visual Artefacts": [
+      "run4_selected_Lung_seed00"
+    ],
+    "Anatomical Feature Clarity": [
+      "run4_selected_Lung_seed00"
+    ],
+    "Certainty of Pulmonary Diagnostic Suspicion": [
+      "run4_selected_Lung_seed00"
+    ],
+    "Respiratory-Related Cancer Diagnosis": [
+      "run4_selected_Lung_seed00"
+    ],
+    "Patient Narrative Coherence": [
+      "run4_selected_Lung_seed00"
+    ]
   },
   "unreviewed": {}
 }

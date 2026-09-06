@@ -7,9 +7,9 @@ from partially observed view subsets, following the motivation of
 [Multi-View Causal Representation Learning with Partial Observability](https://arxiv.org/abs/2311.04056).
 An MLLM then names each learned block from contrastive sample pairs.
 
-The released default is the selected full-block configuration from run4. It
+The released default is the selected full-block configuration from the paper. It
 stops after factor naming and evaluates discovered nodes with NP, NR and NF.
-It does not reproduce the run4 ablation sweep or the later run4a--run6 studies.
+It does not reproduce the ablation study or the later studies.
 
 ## Pipeline
 
@@ -49,14 +49,7 @@ The only experiment override distributed here is
 | Quantification mode | MultiView |
 | Execution scope | nodes only |
 
-For target block `b`, pair selection uses
 
-```text
-score(i, j; b) = d_b(i, j) - [1 / (M - 1)] sum_{c != b} d_c(i, j),
-```
-
-where each `d` is the L2 distance between the two sample representations in a
-block and `M` is the number of discovered blocks.
 
 ## Environment
 
@@ -246,15 +239,7 @@ python -m eval.node_metrics Lung run4_selected_Lung_seed00
 ```
 
 The evaluator reports NP, NR and NF together with predicted and matched node
-counts. It follows the MLLM-CD node convention: the target is included in both
-the predicted and GT node sets, while multiple predicted names mapped to the
-same GT node count once in the matched set.
-
-```text
-NP = |mapped predicted GT node set| / |predicted node set|
-NR = |mapped predicted GT node set| / |GT node set|
-NF = 2 NP NR / (NP + NR)
-```
+counts.
 
 Compound secondary mappings are diagnostic annotations and are not added to the
 matched set.
