@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+*.pt
+.env
+.venv/
+mvext_data/
+outputs/
+logs/
+apple_images_counterfactual/
+lung_images_counterfactual/
