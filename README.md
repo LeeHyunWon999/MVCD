@@ -45,7 +45,7 @@ The only experiment override distributed here is
 | Block deduplication | off |
 | Naming similarity | L2 distance |
 | Contrastive pairs per block | 10 |
-| Other-block coefficient | `1 / (M - 1)` |
+| Other-block coefficient | average |
 | Quantification mode | MultiView |
 | Execution scope | nodes only |
 
@@ -66,8 +66,7 @@ also contain FCI and counterfactual-refinement code.
 
 ## Gemini configuration
 
-Factor naming requires a Gemini API key. Keep it in the environment; do not put
-it in source files, config files or `.env` files committed to Git.
+Factor naming requires a Gemini model and API key.
 
 ```bash
 export API_KEY="YOUR_GEMINI_API_KEY"
@@ -76,13 +75,13 @@ export MODEL="gemini-3.1-flash-image"
 
 The outer run seed is forwarded to Gemini where the API supports seeded
 generation. Hosted model behavior can nevertheless change, so newly generated
-factor names need not be byte-identical to the archived mappings.
+factor names may not be byte-identical to the archived mappings.
 
 ## Data preparation
 
-The repository contains the MAG and Lung CSV files and their source images.
-Generated views, manifests, CLIP caches and model weights are intentionally not
-tracked.
+The repository contains the original MAG and Lung dataset, their CSV and source images. The
+generated views of the data, manifests, CLIP caches and model weights are intentionally not
+included.
 
 Create the views and manifests:
 
@@ -96,7 +95,7 @@ Create the frozen CLIP feature caches:
 python -m mvext.encoders --dataset both
 ```
 
-These commands create the following ignored artifacts:
+These commands create the following unincluded artifacts:
 
 ```text
 mvext_data/MAG/manifest.csv
@@ -112,8 +111,7 @@ recreated from the included inputs.
 
 ## Running node discovery
 
-The convenience entry point has independent preparation, training and naming
-stages. Commands are run from the repository root.
+This running part has independent preparation, training and naming stages. Commands are run from the repository root. If you want to run the phase at once, see **Run every stage at once** part below. (GT mapping and metric part is still saparated.)
 
 ### Phase A: learn the blocks
 
@@ -147,10 +145,9 @@ outputs/<dataset-dir>/<run-id>/<model>/graph_iter1_<timestamp>.json
 ```
 
 The graph contains the target and discovered factor nodes but no edges. Reusing
-the same run ID also reuses `iter1_factors.json`; use a different output folder
-if a fresh independent naming call is required.
+the same run ID also reuses `iter1_factors.json`.
 
-### Run every stage
+### Alternative : Run every stage at once
 
 After exporting `API_KEY`, preparation, training and naming can be run together:
 
@@ -169,7 +166,7 @@ through `--seed 4`.
 
 ## Reviewing factor-to-GT mappings
 
-The release includes dataset-wide mappings accumulated during development:
+This release code includes dataset-wide mappings accumulated during development:
 
 ```text
 eval/mappers/MAG.json
