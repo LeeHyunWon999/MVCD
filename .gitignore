@@ -5,6 +5,7 @@ __pycache__/
 .venv/
 mvext_data/
 outputs/
+eval/mappers/*_unreviewed_helper.json
 logs/
 apple_images_counterfactual/
 lung_images_counterfactual/

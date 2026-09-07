@@ -40,9 +40,7 @@
       "Skin Color Hue": [],
       "Fruit Skin Color": [],
       "Predominant Skin Color": [],
-      "Apple Skin Color": [
-        "run4_selected_MAG_seed00"
-      ],
+      "Apple Skin Color": [],
       "Red Blush Coverage": [],
       "Apple Color": [],
       "Skin Redness": [],
@@ -316,9 +314,7 @@
       "Surface Cracks and Punctures": [],
       "Overall Surface Condition": [],
       "Rotted Brown Spots": [],
-      "Apple Surface Blemishes": [
-        "run4_selected_MAG_seed00"
-      ],
+      "Apple Surface Blemishes": [],
       "Internal Decay/Rot": [],
       "Brown Skin Discoloration": [],
       "Severe Brownish Scarring": [],
@@ -1107,9 +1103,7 @@
       "Factor 4: Surface Damage and Superficial Integrity": [],
       "Factor 5: Deep and Significant Skin Breach": [],
       "Factor 6: Overall Decay and Contamination": [],
-      "Musty Rotten Condition": [
-        "run4_selected_MAG_seed00"
-      ]
+      "Musty Rotten Condition": []
     },
     "aroma": {
       "Apple Aroma Purity": [],
@@ -1278,9 +1272,7 @@
       "freshness aroma-flavor (absence of rot)": [],
       "Aromatic Defects and Off-Notes": [],
       "Odor Presence and Appeal": [],
-      "Apple Freshness Aroma": [
-        "run4_selected_MAG_seed00"
-      ]
+      "Apple Freshness Aroma": []
     },
     "taste": {
       "Overall Flavor and Aroma Pleasantness": [],
@@ -1334,9 +1326,7 @@
       "Taste Profile Sweetness": [],
       "Flavor Sweetness": [],
       "Predominant Flavor Profile": [],
-      "Sweetness Level": [
-        "run4_selected_MAG_seed00"
-      ],
+      "Sweetness Level": [],
       "Musty/Rotten Flavor": [],
       "Primary Taste Profile": [],
       "Sweetness and Moisture Combined": [],
@@ -1431,9 +1421,7 @@
       "Sweetness Dominance": [],
       "Dominant Flavor Type": [],
       "Dominant Taste Classification": [],
-      "Sourness Intensity": [
-        "run4_selected_MAG_seed00"
-      ],
+      "Sourness Intensity": [],
       "Sweetness/Acidity Balance": [],
       "Flavor Freshness (Presence of Rot)": [],
       "Level of Perceived Acidity": [],
@@ -1696,18 +1684,14 @@
       "Presence of Sweetness": [],
       "Acidity Balance": [],
       "Factor 3: Sweet-Sour Balance": [],
-      "Sweet Sour Balance": [
-        "run4_selected_MAG_seed00"
-      ]
+      "Sweet Sour Balance": []
     },
     "juiciness": {
       "Texture Moisture Level": [],
       "Hydration": [],
       "Abundant Moisture": [],
       "Apple Crispness and Moisture": [],
-      "Apple Moisture Content": [
-        "run4_selected_MAG_seed00"
-      ],
+      "Apple Moisture Content": [],
       "Apple Moisture Texture": [],
       "Flesh Juiciness": [],
       "Flesh Moisture Content": [],
@@ -1925,9 +1909,7 @@
       "Nutritional Value Score": [],
       "Nutritional/Flavor Balance (2)": [],
       "Vitamin C Content": [],
-      "Nutritional Content": [
-        "run4_selected_MAG_seed00"
-      ],
+      "Nutritional Content": [],
       "Nutritional Value Description": [],
       "Nutritional Strength Claim": [],
       "Nutritional and Moisture Density": [],
@@ -2119,9 +2101,7 @@
       "Financial and Market Performance": [],
       "Market Acceptance and Returns": [],
       "Market Appeal": [],
-      "Market Potential": [
-        "run4_selected_MAG_seed00"
-      ],
+      "Market Potential": [],
       "Market Potential Forecast": [],
       "Market Potential Outlook": [],
       "Market Potential Viability": [],
@@ -2468,9 +2448,7 @@
       "Factor 7: Commercial Viability": []
     },
     "score": {
-      "score": [
-        "run4_selected_MAG_seed00"
-      ]
+      "score": []
     }
   },
   "compound": {
@@ -4070,9 +4048,7 @@
     "Abrasive Scoring Patterns": [],
     "Misleading Freshness Indicators": [],
     "Factor 8: Visual Confirmation and Consistency Across Channels": [],
-    "Apple Exterior Structure": [
-      "run4_selected_MAG_seed00"
-    ]
+    "Apple Exterior Structure": []
   },
   "unreviewed": {}
 }
