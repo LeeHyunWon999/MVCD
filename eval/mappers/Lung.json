@@ -27,9 +27,7 @@
       "Patient Declared Gender": [],
       "Patient Male Sex": [],
       "Reported Biological Sex": [],
-      "Male Sex": [
-        "mvcd_Lung_seed00"
-      ]
+      "Male Sex": []
     },
     "age": {
       "Patient Age": [],
@@ -54,9 +52,7 @@
       "Age Category": [],
       "Patient Age Bracket": [],
       "Patient Age and Gender (Elderly Male Profile)": [],
-      "Elderly Status": [
-        "mvcd_Lung_seed00"
-      ]
+      "Elderly Status": []
     },
     "smoking": {
       "Patient Smoking History": [],
@@ -67,9 +63,7 @@
       "Smoking History Status": [],
       "Smoking Status": [],
       "Smoking Tobacco History": [],
-      "Tobacco Smoke Exposure": [
-        "mvcd_Lung_seed00"
-      ],
+      "Tobacco Smoke Exposure": [],
       "Tobacco Smoke History": [],
       "Tobacco Use Presence": [],
       "Smoking and Symptom Detail": [],
@@ -537,17 +531,11 @@
       "Solid Mass Characteristics": [],
       "Tumor Margin Definition": [],
       "Tumor Presence": [],
-      "Diffuse Pulmonary Nodularity": [
-        "mvcd_Lung_seed00"
-      ],
-      "Abnormal Chest Radiograph Mention": [
-        "mvcd_Lung_seed00"
-      ]
+      "Diffuse Pulmonary Nodularity": [],
+      "Abnormal Chest Radiograph Mention": []
     },
     "diagnosis": {
-      "score": [
-        "mvcd_Lung_seed00"
-      ]
+      "score": []
     }
   },
   "compound": {
@@ -2472,18 +2460,10 @@
     "Thorough Medical History": [],
     "Unexplained or New Presentation": [],
     "Visual Contrast": [],
-    "Cavitation": [
-      "mvcd_Lung_seed00"
-    ],
-    "Arrow Annotation Presence": [
-      "mvcd_Lung_seed00"
-    ],
-    "Detailed Clinical Justification for Lung Cancer Investigation": [
-      "mvcd_Lung_seed00"
-    ],
-    "Common Respiratory Symptoms": [
-      "mvcd_Lung_seed00"
-    ]
+    "Cavitation": [],
+    "Arrow Annotation Presence": [],
+    "Detailed Clinical Justification for Lung Cancer Investigation": [],
+    "Common Respiratory Symptoms": []
   },
   "unreviewed": {}
 }
