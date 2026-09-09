@@ -1,4 +1,4 @@
-"""Dataset-wide factor-name mapper for run4 node evaluation."""
+"""Dataset-wide factor-name mapper for MVCD evaluation."""
 import argparse
 import json
 from pathlib import Path

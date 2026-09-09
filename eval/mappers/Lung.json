@@ -23,7 +23,13 @@
       "Patient Sex Clarity": [],
       "Patient Identified as Male": [],
       "Factor 1: Patient Sex": [],
-      "Gender": []
+      "Gender": [],
+      "Patient Declared Gender": [],
+      "Patient Male Sex": [],
+      "Reported Biological Sex": [],
+      "Male Sex": [
+        "mvcd_Lung_seed00"
+      ]
     },
     "age": {
       "Patient Age": [],
@@ -45,7 +51,12 @@
       "Elderly Male Demographics": [],
       "Patient Biological Age": [],
       "Factor 5: Age Group: Middle-aged": [],
-      "Age Category": []
+      "Age Category": [],
+      "Patient Age Bracket": [],
+      "Patient Age and Gender (Elderly Male Profile)": [],
+      "Elderly Status": [
+        "mvcd_Lung_seed00"
+      ]
     },
     "smoking": {
       "Patient Smoking History": [],
@@ -56,7 +67,9 @@
       "Smoking History Status": [],
       "Smoking Status": [],
       "Smoking Tobacco History": [],
-      "Tobacco Smoke Exposure": [],
+      "Tobacco Smoke Exposure": [
+        "mvcd_Lung_seed00"
+      ],
       "Tobacco Smoke History": [],
       "Tobacco Use Presence": [],
       "Smoking and Symptom Detail": [],
@@ -122,7 +135,12 @@
       "Documentation of smoking history": [],
       "Burden of Tobacco Exposure": [],
       "Tobacco smoking exposure": [],
-      "Smoking Status Confirmation": []
+      "Smoking Status Confirmation": [],
+      "Extensive Smoking History": [],
+      "Tobacco Smoking Exposure": [],
+      "Tobacco Usage": [],
+      "Tobacco and Symptoms": [],
+      "Tobacco/Smoking History": []
     },
     "lesion": {
       "Lung Lesion Characteristics": [],
@@ -488,10 +506,48 @@
       "Mass-like/Nodular Lesion Morphology": [],
       "Pleural Space Abnormality": [],
       "Metabolic Hot Spot Presence (PET)": [],
-      "Distribution of Pulmonary Disease": []
+      "Distribution of Pulmonary Disease": [],
+      "Abnormal Mass Presence": [],
+      "Cancer-Related Findings": [],
+      "Clear Mass on X-ray": [],
+      "Definite Malignant Mass": [],
+      "Diffuse Lung Nodularity": [],
+      "Distinct Soft Tissue Nodules": [],
+      "Extensive Micronodular Conglomeration": [],
+      "Extensive Micronodular Conglomeration (2)": [],
+      "High Risk Lung Malignancy": [],
+      "Large Distinct Lung Mass": [],
+      "Localized Lung Mass": [],
+      "Lung Collapse/Atelectasis": [],
+      "Lung Nodule Distinction": [],
+      "Lung Nodules or Masses": [],
+      "Malignancy or Neurological Findings": [],
+      "Mass Visualization on X-ray": [],
+      "Named Lung Finding": [],
+      "Non-Metastatic Primary Lung Lesion": [],
+      "Normal Lung Findings": [],
+      "Organ Clarity": [],
+      "Parenchymal Lung Nodularity": [],
+      "Pneumonia Findings Explicit": [],
+      "Predominant Lung Pathology": [],
+      "Pulmonary Mass/Nodule Clear Visibility": [],
+      "Radiographic Findings": [],
+      "Right-Sided Mediastinal Mass": [],
+      "Solid Lung Masses": [],
+      "Solid Mass Characteristics": [],
+      "Tumor Margin Definition": [],
+      "Tumor Presence": [],
+      "Diffuse Pulmonary Nodularity": [
+        "mvcd_Lung_seed00"
+      ],
+      "Abnormal Chest Radiograph Mention": [
+        "mvcd_Lung_seed00"
+      ]
     },
     "diagnosis": {
-      "score": []
+      "score": [
+        "mvcd_Lung_seed00"
+      ]
     }
   },
   "compound": {
@@ -564,6 +620,13 @@
         "gender"
       ],
       "runs": []
+    },
+    "Patient Age and Gender (Elderly Male Profile)": {
+      "primary": "age",
+      "runs": [],
+      "secondary": [
+        "gender"
+      ]
     }
   },
   "nulled": {
@@ -2326,7 +2389,101 @@
     "Anatomical Feature Clarity": [],
     "Certainty of Pulmonary Diagnostic Suspicion": [],
     "Respiratory-Related Cancer Diagnosis": [],
-    "Patient Narrative Coherence": []
+    "Patient Narrative Coherence": [],
+    "Abnormality Conspicuity": [],
+    "Active Presenting Symptoms": [],
+    "Acute Presentation": [],
+    "Acute or Significant Symptom Presentation": [],
+    "Acuteness of Symptoms Presenting Complaint": [],
+    "Air Density Contrast": [],
+    "Anatomical Annotations": [],
+    "Anatomical View Obstruction": [],
+    "Annotated Sanghi Case": [],
+    "Annotated Sanghi Case (2)": [],
+    "Annotation or Region Labeling": [],
+    "Arrows and Labels Presence": [],
+    "Background Clarity and Contrast": [],
+    "Breath Stability": [],
+    "CT Scan Image Quality": [],
+    "Cancer History Content": [],
+    "Cancer Risk Factors": [],
+    "Clinical Presentation Profile": [],
+    "Clinical Symptom and History Severity": [],
+    "Clinical presentation details": [],
+    "Consistent Patient Identity": [],
+    "Cross-Sectional CT Scan": [],
+    "Cross-Sectional CT Scan (2)": [],
+    "Detailed Clinical Narrative": [],
+    "Diagnosed Disease": [],
+    "Diagnostic Image Clarity": [],
+    "Displayed Lung Opacity": [],
+    "Dyspnea Symptom Mention": [],
+    "Established Cancer Status": [],
+    "Extrapulmonary Cancer History": [],
+    "Factor Name": [],
+    "Fine Detail Sharpness": [],
+    "Fine Texture Clarity": [],
+    "Focal Lung Parenchyma": [],
+    "Frame Composition": [],
+    "Hemoptysis Presentation": [],
+    "High Lung Cancer Risk Indicators": [],
+    "High-Risk Clinical Presentation": [],
+    "Hilar / Mediastinal Contours": [],
+    "History of Right Pneumonectomy": [],
+    "Image Brightness": [],
+    "Image Resolution Quality": [],
+    "Image data missing": [],
+    "Known History of Lung Disease": [],
+    "Left Main Bronchus Compression": [],
+    "Lung Visualization Quality": [],
+    "Major Tracheal Landmarks": [],
+    "MedPix Segmentation Masks": [],
+    "Mediastinal or Central Involvement": [],
+    "Medical Complexity Co-morbidities": [],
+    "Medical Detail Depth": [],
+    "Medical Device Interference": [],
+    "Medical Diagnosis": [],
+    "Medical Imaging Clarity": [],
+    "Metastasis-Related Neurological Symptoms": [],
+    "Non-Comparable Image Source": [],
+    "Non-specific Neurological Presentation": [],
+    "Past Cancer History": [],
+    "Patient Identification Details": [],
+    "Pre-existing COPD Diagnosis": [],
+    "Presence of Physical Symptoms": [],
+    "Presenting Physical Symptoms": [],
+    "Presenting Symptom Focus": [],
+    "Presenting Symptom vs. Contextual History Density": [],
+    "Previous Abnormal Findings": [],
+    "Previous Imaging Findings": [],
+    "Pulmonary Filling Defect": [],
+    "Pulmonary Symptom Focus": [],
+    "Relevant Respiratory Symptoms": [],
+    "Reported Cough Symptom": [],
+    "Respiratory Symptoms Mention": [],
+    "Richness of Clinical Context": [],
+    "Segmentation Masks": [],
+    "Severe Honeycomb Lung Disease": [],
+    "Signs of Abnormal Growth": [],
+    "Standard Symptom Focus": [],
+    "Sternotomy Hardware Presentation": [],
+    "Structural Honeycombing Complexity": [],
+    "Symptom Detail Specificity": [],
+    "Thorough Medical History": [],
+    "Unexplained or New Presentation": [],
+    "Visual Contrast": [],
+    "Cavitation": [
+      "mvcd_Lung_seed00"
+    ],
+    "Arrow Annotation Presence": [
+      "mvcd_Lung_seed00"
+    ],
+    "Detailed Clinical Justification for Lung Cancer Investigation": [
+      "mvcd_Lung_seed00"
+    ],
+    "Common Respiratory Symptoms": [
+      "mvcd_Lung_seed00"
+    ]
   },
   "unreviewed": {}
 }

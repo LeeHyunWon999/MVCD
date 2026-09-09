@@ -1,9 +1,7 @@
-"""Module 1 - view augmentation.
+"""Build the paper's aligned MVCD image and corpus-frequency text views.
 
-Turns each sample's (image, text) into 7 aligned views (4 image + 3 text) and
-writes a manifest that is the single source of truth for sample<->view
-alignment. The manifest row index equals the sample index; downstream folds use
-this index with shuffle=False so a sample never desyncs from its views.
+Each sample receives three image views and twelve text views. The manifest row
+index equals the sample index so downstream folds never desynchronize views.
 
 Usage:
     python -m mvext.augment --dataset MAG
@@ -11,14 +9,18 @@ Usage:
     python -m mvext.augment --dataset both
 """
 import argparse
+from collections import Counter
 import os
 import re
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 from PIL import Image
+from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS, CountVectorizer
 
 from mvext import config as C
+from mvext.artifacts import write_json
 
 # --- image view ops -------------------------------------------------------
 
@@ -77,85 +79,7 @@ def silhouette_view(img):
     return Image.fromarray(np.stack([binary] * 3, axis=-1))
 
 
-# --- text view ops --------------------------------------------------------
-
-
-def _split_sentences(text):
-    parts = re.split(r"(?<=[.!?])\s+", str(text).strip())
-    return [p for p in parts if p.strip()]
-
-
-# MAG text is split into 5 semantic categories (mapping to GT text factors:
-# taste, aroma, juiciness, nutrition, recmd/market). Each category VIEW keeps its
-# own vocabulary and removes the OTHER categories' keywords (word-level masking),
-# so the encoder sees that category's signal more purely -- even in mixed
-# sentences. Keyword sets are corpus-frequency derived.
-MAG_KW = {
-    "taste": {
-        "sweet", "sweetness", "sour", "tart", "taste", "flavor", "bitter",
-        "bland", "tangy", "palate", "sugary", "acidic", "flavour",
-    },
-    "aroma": {
-        "aroma", "fragrant", "musty", "rotten", "odor", "odour", "scent",
-        "smell", "notes", "pungent", "fermented", "aromatic", "fragrance",
-    },
-    "juiciness": {
-        "moisture", "moist", "juicy", "juiciness", "dry", "texture", "crisp",
-        "mealy", "watery", "refreshing", "firm", "tender", "crunchy", "succulent",
-    },
-    "nutrition": {
-        "nutritional", "nutrient", "nutrients", "nutrition", "fiber", "vitamin",
-        "dietary", "essential", "protein", "mineral", "antioxidant", "healthy",
-        "wholesome",
-    },
-    "market": {
-        "market", "potential", "financial", "losses", "consumer", "expectations",
-        "sales", "returns", "appeal", "risk", "unacceptable", "commercial",
-        "batch", "profit", "value", "demand", "price", "revenue", "clientele",
-        "supply", "standards", "commendable", "sell", "buyer",
-    },
-}
-MAG_TEXT_VIEWS = ["taste", "aroma", "juiciness", "nutrition", "market"]
-
-# Lung text split into the 4 GROUND-TRUTH text factors (gender/age/smoking/lesion;
-# diagnosis is the target). gender & age appear in every Demographics line, so
-# coverage is far better than the earlier frequency-based categories. Codes
-# g/a/s/l in the config view names txt_pm_XY.
-LUNG_KW = {
-    "gender": {
-        "male", "female", "man", "woman", "men", "women", "gentleman", "lady",
-        "boy", "girl", "gender", "sex",
-    },
-    "age": {
-        "y", "yo", "year", "years", "old", "aged", "age", "ages", "elderly",
-        "young", "adult", "adults", "decade", "newborn", "infant",
-    },
-    "smoking": {
-        "smoker", "smokers", "smoking", "smoke", "smoked", "tobacco", "cigarette",
-        "cigarettes", "pack", "packs", "nicotine", "nonsmoker",
-    },
-    "lesion": {
-        "lesion", "lesions", "mass", "masses", "nodule", "nodules", "tumor",
-        "tumour", "cancer", "carcinoma", "malignant", "malignancy", "metastasis",
-        "metastatic", "neoplasm", "opacity", "opacities", "consolidation",
-        "infiltrate", "effusion", "abnormal", "abnormality", "radiograph",
-        "biopsy", "fibrosis", "lymphoma",
-    },
-}
-
-# per-dataset keyword categories + single-letter code -> category name.
-_KW = {"MAG": MAG_KW, "Lung": LUNG_KW}
-_CAT_CODE = {
-    "MAG": {"t": "taste", "a": "aroma", "j": "juiciness", "n": "nutrition", "m": "market"},
-    "Lung": {"g": "gender", "a": "age", "s": "smoking", "l": "lesion"},
-}
-
-
-def pairmask_view(dataset, text, code_a, code_b):
-    """Text view that removes TWO categories' keywords (keeps the other 3)."""
-    kw, code = _KW[dataset], _CAT_CODE[dataset]
-    remove = kw[code[code_a]] | kw[code[code_b]]
-    return _mask_keywords(text, remove) or text
+# --- text views -----------------------------------------------------------
 
 
 def _mask_keywords(text, keywords):
@@ -172,14 +96,67 @@ def _mask_keywords(text, keywords):
     return out.strip(" ,.;:")
 
 
-def mag_category_view(review, category):
-    """MAG text view for one category: remove all OTHER categories' keywords,
-    keeping this category's vocabulary. Falls back to original if emptied."""
-    others = set()
-    for c, kw in MAG_KW.items():
-        if c != category:
-            others |= kw
-    return _mask_keywords(review, others) or review
+def _base_text(dataset, row):
+    if dataset == "MAG":
+        return str(row["Review"])
+    if dataset == "Lung":
+        return f"{str(row['Demographics']).strip()} {str(row['History']).strip()}".strip()
+    raise ValueError(dataset)
+
+
+def rank_keywords(dataset, meta, k=C.TEXT_KEYWORD_K):
+    """Rank eligible corpus unigrams by total frequency, deterministically."""
+    documents = [_base_text(dataset, row) for _, row in meta.iterrows()]
+    analyzer = CountVectorizer(lowercase=True, ngram_range=(1, 1)).build_analyzer()
+    tokenized = [analyzer(document) for document in documents]
+    term_frequency = Counter(token for document in tokenized for token in document)
+    document_frequency = Counter(token for document in tokenized for token in set(document))
+    maximum_df = 0.90 * len(documents)
+    stop_words = set(ENGLISH_STOP_WORDS)
+    excluded = {
+        "english_stop_words": sorted(token for token in term_frequency
+                                      if token in stop_words),
+        "below_min_df": sorted(token for token, count in document_frequency.items()
+                               if token not in stop_words and count < 2),
+        "above_max_df": sorted(token for token, count in document_frequency.items()
+                               if token not in stop_words and count > maximum_df),
+    }
+    eligible = sorted(token for token in term_frequency
+                      if token not in stop_words
+                      and 2 <= document_frequency[token] <= maximum_df)
+    if len(eligible) < k:
+        raise ValueError(f"{dataset}: only {len(eligible)} eligible tokens for K={k}")
+    ranking = sorted(eligible, key=lambda token: (-term_frequency[token], token))
+    return {
+        "schema_version": 1,
+        "dataset": dataset,
+        "method": "frequency",
+        "k": k,
+        "settings": {"lowercase": True, "ngram_range": [1, 1],
+                     "stop_words": "english", "min_df": 2, "max_df": 0.90,
+                     "norm": None},
+        "selected": [{"token": token, "score": float(term_frequency[token])}
+                     for token in ranking[:k]],
+        "ranking": [{"token": token, "score": float(term_frequency[token]),
+                     "term_frequency": term_frequency[token],
+                     "document_frequency": document_frequency[token]}
+                    for token in ranking],
+        "excluded": excluded,
+    }
+
+
+def isolate_text_views(text, selected):
+    views = {}
+    for target in range(len(selected)):
+        others = [index for index in range(len(selected)) if index != target]
+        for side, indices in (("a", others[::2]), ("b", others[1::2])):
+            masked = _mask_keywords(text, {selected[index] for index in indices})
+            views[f"txt_iso_{target:02d}_{side}"] = masked
+    return views
+
+
+def _text_views(dataset, row, selected):
+    return isolate_text_views(_base_text(dataset, row), selected)
 
 
 # --- driver ---------------------------------------------------------------
@@ -191,26 +168,6 @@ def _save(img, path):
 
 
 _IMG_OPS = {"img_color": color_view, "img_hpf": hpf_view, "img_silhouette": silhouette_view}
-
-
-def _base_text(dataset, row):
-    """The full text a dataset's pair-mask views are derived from."""
-    if dataset == "MAG":
-        return str(row["Review"])
-    if dataset == "Lung":                            # concat Demographics + History
-        return f"{str(row['Demographics']).strip()} {str(row['History']).strip()}".strip()
-    raise ValueError(dataset)
-
-
-def _text_views(dataset, row):
-    """Return {view_name: text} for the pair-mask text views of `dataset`."""
-    text = _base_text(dataset, row)
-    out = {}
-    for name in C.views(dataset):
-        if name.startswith("txt_pm_"):
-            a, b = name.split("_")[-1]               # e.g. "rs" -> ('r','s')
-            out[name] = pairmask_view(dataset, text, a, b)
-    return out
 
 
 def build_views(dataset, root=C.DATA_ROOT):
@@ -231,6 +188,9 @@ def build_views(dataset, root=C.DATA_ROOT):
     else:
         raise ValueError(dataset)
     meta = meta.reset_index(drop=True)
+    specification = rank_keywords(dataset, meta)
+    selected = [entry["token"] for entry in specification["selected"]]
+    write_json(Path(out_dir) / "text_view_spec.json", specification)
 
     rows = []
     for i in range(len(src_img)):
@@ -243,7 +203,7 @@ def build_views(dataset, root=C.DATA_ROOT):
                 p = os.path.join(view_dir, name, f"{i}.png")
                 _save(_IMG_OPS[name](img), p)
                 row[name] = p
-        row.update(_text_views(dataset, meta.iloc[i]))
+        row.update(_text_views(dataset, meta.iloc[i], selected))
         rows.append(row)
 
     manifest = pd.DataFrame(rows).set_index("idx")[["score"] + view_names]

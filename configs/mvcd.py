@@ -1,4 +1,4 @@
-"""Paper configuration for node discovery."""
+"""Paper configuration for MVCD with corpus-frequency text views."""
 
 CONTENT_SIZE_MODE = "variable"
 LOSS = "infonce"
@@ -11,5 +11,8 @@ NAMING_USE_LOSS_SIM = False
 TOP_N = 10
 LAMBDA_AVERAGE = True
 QUANT = "multiview"
-NODES_ONLY = True
+NODES_ONLY = False
+TEXT_KEYWORD_METHOD = "frequency"
+TEXT_KEYWORD_K = 6
+MULTIVIEW_DISCRETIZE = False
 DATA_ROOT = "mvext_data"

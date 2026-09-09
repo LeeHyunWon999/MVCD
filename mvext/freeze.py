@@ -1,4 +1,4 @@
-"""Frozen projection of NEW samples (iter2 counterfactuals) onto the discovered
+"""Frozen projection of new samples onto the discovered
 factors -- the MultiView-quantification path.
 
 A new sample's views are generated the same way as training views, encoded by the
@@ -7,6 +7,9 @@ ranked against the FIXED original rank map (block_raw). This yields the sample's
 rank-0..1 value per factor WITHOUT re-learning or re-ranking the originals -- the
 "freeze" (adapters, block axes, and rank map all fixed).
 """
+import json
+from pathlib import Path
+
 import torch
 from PIL import Image
 
@@ -24,14 +27,17 @@ def _sample_features(dataset, image_paths, reviews):
     n = len(image_paths)
     feats = torch.zeros(n, len(view_names), CLIP_DIM)
     imgs = [Image.open(p) for p in image_paths]
+    specification = json.loads(
+        (Path(C.DATA_ROOT) / dataset / "text_view_spec.json").read_text())
+    selected = [entry["token"] for entry in specification["selected"]]
+    text_views = [A.isolate_text_views(str(review), selected) for review in reviews]
     for v, name in enumerate(view_names):
         if v in img_views:                                   # image view
             op = A._IMG_OPS.get(name)
             items = [op(im) if op else im for im in imgs]    # PIL images
             f = extract_clip_feature("image", items)
-        else:                                                # text pair-mask view
-            a, b = name.split("_")[-1]
-            items = [A.pairmask_view(dataset, str(r), a, b) for r in reviews]
+        else:                                                # frequency-isolate view
+            items = [views[name] for views in text_views]
             f = extract_clip_feature("text", items)
         feats[:, v, :f.shape[1]] = f
     return feats

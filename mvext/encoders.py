@@ -120,7 +120,7 @@ def _cache_path(dataset, root=C.DATA_ROOT):
 
 
 def build_clip_cache(dataset, root=C.DATA_ROOT):
-    """Extract CLIP features for all 7 views of every sample and cache them."""
+    """Extract CLIP features for every configured view and cache them."""
     manifest = pd.read_csv(os.path.join(root, dataset, "manifest.csv"), index_col=0)
     n = len(manifest)
     view_names = C.views(dataset)
@@ -144,7 +144,11 @@ def build_clip_cache(dataset, root=C.DATA_ROOT):
 
 
 def load_cache(dataset, root=C.DATA_ROOT):
-    return torch.load(_cache_path(dataset, root), map_location="cpu", weights_only=False)
+    cache = torch.load(_cache_path(dataset, root), map_location="cpu", weights_only=False)
+    expected = C.views(dataset)
+    if cache.get("view_names") != expected:
+        raise ValueError(f"stale {dataset} CLIP cache; rerun the prepare stage")
+    return cache
 
 
 # --- adapters ------------------------------------------------------------

@@ -1,6 +1,4 @@
-"""MultiView-CD driver (A1): the MLLM-CD loop with its CFD stage replaced by
-MultiView block discovery + block-based naming (mvext modules 1-5). Originals
-(main_MAG.py / main_Lung.py, utils.py) are left untouched for comparison.
+"""MVCD driver: MultiView factor blocks followed by MLLM-CD graph discovery.
 
 iter1 (this file, module 5 finish):
     blocks.pt -> LLM factor naming -> LLM 1/0/-1 annotation -> KCI-FCI -> graph
@@ -16,14 +14,16 @@ import datetime
 import json
 import os
 from copy import deepcopy
+from pathlib import Path
 
 import pandas as pd
 from causallearn.search.ConstraintBased.FCI import fci
 from causallearn.utils.GraphUtils import GraphUtils
 
 from utils import Helper
-from gemini_utils import generate
+from gemini_utils import generate, generation_config_dict
 from mvext import config as C
+from mvext.artifacts import utc_now, write_json
 from mvext.naming import (load_blocks, discover_factors_from_blocks, annotate_llm,
                           resolve_top_n, select_block_pairs)
 from mvext.seeding import seed_everything
@@ -82,12 +82,14 @@ def _unique_names(factors):
     return out
 
 
-def _quantify(dataset, helper, meta, factors, blocks, output_path, iter):
+def _quantify(dataset, helper, meta, factors, blocks, output_path, iter,
+              quant=None):
     """Per-sample factor values fed to FCI. QUANT='llm' -> LLM 1/0/-1 annotation;
     QUANT='multiview' -> the block representation (block_rank01), with factors
     aligned 1:1 to the deduped blocks."""
     csv = os.path.join(output_path, f"iter{iter}_annotation_results.csv")
-    if C.QUANT == "multiview":
+    quant = quant or C.QUANT
+    if quant == "multiview":
         r = blocks["block_rank01"].numpy()                 # (N, n_blocks) rank 0-1
         names = [f["name"] for f in factors]
         assert r.shape[1] == len(names), (
@@ -120,6 +122,17 @@ def _discover_factors(dataset, helper, meta, blocks, output_path, top_n):
     return factors
 
 
+def _save_top_pairs(blocks, output_path, top_n):
+    rows = []
+    for index, subset in enumerate(blocks["block_subsets"]):
+        pairs = select_block_pairs(blocks["block_values"], index, top_n)
+        rows.append({"block_index": index, "subset": list(subset),
+                     "pairs": [{"pair": number, "sample_a": a, "sample_b": b,
+                                "selection_score": score}
+                               for number, (a, b, score) in enumerate(pairs, 1)]})
+    write_json(os.path.join(output_path, "top_pairs.json"), rows)
+
+
 def run_nodes_only(dataset, helper, datetime_str, output_path, top_n=None):
     """Node-first path (B8): discover + name factors, export a NODE-ONLY graph
     ([Y] + factors, no edges). No quantification / FCI / counterfactual. Metrics
@@ -128,6 +141,7 @@ def run_nodes_only(dataset, helper, datetime_str, output_path, top_n=None):
     blocks = load_blocks(dataset)
     factors = _discover_factors(dataset, helper, meta, blocks, output_path,
                                 resolve_top_n(top_n))
+    _save_top_pairs(blocks, output_path, resolve_top_n(top_n))
     names = [TARGET] + [f["name"] for f in factors]
     if save_graph_json is not None:
         model_tag = os.environ.get("MODEL", "unknown").replace("/", "_")
@@ -139,7 +153,8 @@ def run_nodes_only(dataset, helper, datetime_str, output_path, top_n=None):
     return factors
 
 
-def run_iter1(dataset, helper, datetime_str, output_path, top_n=None):
+def run_iter1(dataset, helper, datetime_str, output_path, top_n=None,
+              quantify_with=None):
     meta = load_meta(dataset)
     blocks = load_blocks(dataset)
     top_n = resolve_top_n(top_n)
@@ -150,12 +165,16 @@ def run_iter1(dataset, helper, datetime_str, output_path, top_n=None):
     pairs = {tuple(s): select_block_pairs(blocks["block_values"], b, top_n)
              for b, s in enumerate(blocks["block_subsets"])}
     factors = _discover_factors(dataset, helper, meta, blocks, output_path, top_n)
+    _save_top_pairs(blocks, output_path, top_n)
 
-    ann = _quantify(dataset, helper, meta, factors, blocks, output_path, iter=1)
+    ann = _quantify(dataset, helper, meta, factors, blocks, output_path, iter=1,
+                    quant=quantify_with)
     data_interface = ann.copy()
     data_interface[TARGET] = meta["score"].values.astype(float)
     annotated_name = [TARGET] + [f["name"] for f in factors]
     values = data_interface[annotated_name].values.astype(float)
+    data_interface[annotated_name].to_csv(
+        os.path.join(output_path, "fci_input_iter1.csv"), index=False)
 
     g, _ = fci(values, alpha=0.05, independence_test_method="kci", verbose=False)
     print(f"[{dataset}] FCI done")
@@ -168,7 +187,20 @@ def run_iter1(dataset, helper, datetime_str, output_path, top_n=None):
         os.makedirs(gdir, exist_ok=True)
         gpath = os.path.join(gdir, f"graph_iter1_{datetime_str}.json")
         save_graph_from_causal_learn(g, annotated_name, gpath)
+        save_graph_from_causal_learn(
+            g, annotated_name, os.path.join(output_path, "graph_iter1.json"))
         print(f"[{dataset}] graph JSON -> {gpath}")
+    write_json(os.path.join(output_path, "manifest.json"), {
+        "schema_version": 1, "pipeline": "mvcd", "run_id": Path(output_path).name,
+        "dataset": dataset, "run_seed": int(os.environ.get("MVEXT_RUN_SEED", C.RUN_SEED)),
+        "model": os.environ.get("MODEL"), "generation_config": generation_config_dict(),
+        "factor_count": len(factors), "sample_count": len(meta), "top_k": top_n,
+        "factor_naming": "multiview_block_contrast",
+        "quantification": "original_mllm_cd_ternary",
+        "annotation_values": [-1, 0, 1], "target_score_in_prompts": True,
+        "structure_discovery": "KCI-FCI", "fci_alpha": 0.05,
+        "iteration": 1, "completed_at": utc_now(),
+    })
 
     return factors, annotated_name, data_interface, pairs, g, pdy
 
@@ -268,6 +300,8 @@ def main():
     ap.add_argument("--iter1-only", action="store_true")
     ap.add_argument("--nodes-only", action="store_true",
                     help="node-first: stop after naming, export node-only graph (NP/NR/NF)")
+    ap.add_argument("--quantify-with", choices=["llm", "multiview"], default=None,
+                    help="override only the per-sample values used by FCI")
     args = ap.parse_args()
     C.DATA_ROOT = args.data_root
     run_seed = seed_everything(args.run_seed)
@@ -297,7 +331,8 @@ def main():
         return
 
     factors, annotated_name, data_interface, pairs, g, pdy = run_iter1(
-        args.dataset, helper, datetime_str, output_path, top_n=top_n)
+        args.dataset, helper, datetime_str, output_path, top_n=top_n,
+        quantify_with=args.quantify_with)
     print(f"[{args.dataset}] iter1 complete.")
 
     if not args.iter1_only:

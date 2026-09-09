@@ -1,55 +1,58 @@
-# MLV-CRL: Multi-modal and Multi-View Causal Representation Learning
+# MVCD: Multi-View Causal Discovery
 
-This repository contains the node-discovery implementation used in our study.
-It replaces the CLIP-distance factor proposal stage of
-[MLLM-CD](https://arxiv.org/abs/2509.17784) with shared content blocks learned
-from partially observed view subsets, following the motivation of
+This repository contains the implementation accompanying *Enhancing MLLM-Based
+Causal Discovery with Multi-View Causal Representation Learning*. MVCD replaces
+the CLIP-distance factor proposal stage of
+[MLLM-CD](https://arxiv.org/abs/2509.17784) with factor blocks learned from
+partially observed view subsets, following
 [Multi-View Causal Representation Learning with Partial Observability](https://arxiv.org/abs/2311.04056).
-An MLLM then names each learned block from contrastive sample pairs.
+An MLLM names and quantifies the learned factors, and FCI estimates a partial
+ancestral graph (PAG).
 
-The released default is the selected full-block configuration from the paper. It
-stops after factor naming and evaluates discovered nodes with NP, NR and NF.
-It does not reproduce the ablation study or the later studies.
+The default is the paper configuration. Ablation runners and development
+outputs are intentionally excluded.
 
 ## Pipeline
 
 ```text
 raw image/text samples
-  -> deterministic image and text views
+  -> deterministic image views and corpus-frequency text views
   -> frozen CLIP feature cache
-  -> MultiView block learning
+  -> MultiView factor-block learning
   -> block-specific contrastive pair selection
   -> Gemini factor naming
-  -> node-only graph
-  -> human-reviewed GT mapping
-  -> NP / NR / NF
+  -> Gemini per-sample factor quantification (-1/0/1)
+  -> KCI-FCI PAG estimation with the observed target score
+  -> human-reviewed factor-to-GT mapping
+  -> NP / NR / NF / AP / AR / AF / ESHD
 ```
 
-Phase A learns the shared content blocks. Phase B selects sample pairs that are
-far apart in one block and close in the remaining blocks, then asks Gemini to
-name the dominant factor. No edge is added to the released node-only graph.
+Factor naming and graph estimation are separate stages. GT mappings are not
+used by FCI and may be reviewed after naming while graph estimation runs; they
+are required only for evaluation.
 
-## Selected configuration
+## Paper configuration
 
-The only experiment override distributed here is
-[`configs/run4_selected.py`](configs/run4_selected.py):
+[`configs/mvcd.py`](configs/mvcd.py) selects:
 
 | Setting | Value |
 |---|---|
+| Text-view vocabulary | corpus term frequency, top 6 |
 | Content selector | variable |
 | Objective | InfoNCE |
 | Training similarity | negative squared L2 distance |
 | Validity gate | off |
-| Decomposition | off |
-| Rank normalization | off |
-| Block deduplication | off |
-| Naming similarity | L2 distance |
+| Decomposition / rank normalization / deduplication | off |
+| Naming pair similarity | L2 distance |
 | Contrastive pairs per block | 10 |
-| Other-block coefficient | average |
-| Quantification mode | MultiView |
-| Execution scope | nodes only |
+| Other-block coefficient | average, `1/(M-1)` |
+| Factor naming mode | one name per MultiView block |
+| FCI quantification | MLLM-CD ternary annotation |
+| Graph scope | iteration 1 only |
 
-
+The naming mode and FCI quantification are deliberately separate. Naming keeps
+one factor per learned block without an LLM merge. Only after the names are
+fixed does Gemini assign every sample a value in `{-1, 0, 1}` for FCI.
 
 ## Environment
 
@@ -60,128 +63,152 @@ conda env create -f environment.yml
 conda activate mllm-cd-extended
 ```
 
-The first CLIP run downloads the pinned OpenAI CLIP checkpoint. Graphviz and
-causal-learn remain in the environment because the retained MLLM-CD utilities
-also contain FCI and counterfactual-refinement code.
+The first encoder run downloads the pinned OpenAI CLIP checkpoint. Graph
+estimation requires `causal-learn`; Graphviz/pydot support PAG rendering and
+serialization. These dependencies are included in `environment.yml`.
 
-## Gemini configuration
+## Gemini configuration and data disclosure
 
-Factor naming requires a Gemini model and API key.
+Naming and per-sample quantification require a Gemini API key:
 
 ```bash
 export API_KEY="YOUR_GEMINI_API_KEY"
 export MODEL="gemini-3.1-flash-image"
 ```
 
-The outer run seed is forwarded to Gemini where the API supports seeded
-generation. Hosted model behavior can nevertheless change, so newly generated
-factor names may not be byte-identical to the archived mappings.
+These stages send dataset text, images and observed target scores to the
+configured external Gemini service. Confirm that this is permitted for your
+data before running them. The outer seed is forwarded where the API supports
+seeded generation, but hosted model updates can still prevent byte-identical
+responses.
 
-## Data preparation
+## View construction
 
-The repository contains the original MAG and Lung dataset, their CSV and source images. The
-generated views of the data, manifests, CLIP caches and model weights are intentionally not
-included.
+For each dataset, MVCD uses three image views:
 
-Create the views and manifests:
+- mean-color image;
+- Gaussian high-pass image;
+- Otsu-thresholded silhouette.
+
+For text, MAG uses `Review`; Lung concatenates `Demographics` and `History`.
+The corpus is lowercased and tokenized into unigrams. English stop words and
+terms occurring in fewer than two or more than 90% of documents are removed.
+The six remaining terms with highest total corpus frequency are selected, with
+alphabetical tie-breaking.
+
+For each selected term, the other five selected terms are split into two
+disjoint groups. Masking one group in each copy produces two complementary
+views whose selected-vocabulary intersection retains the target term. This
+gives 12 text views. Together with the three image views, each dataset has 15
+views and nine two-view subsets: three image subsets and six text subsets. No
+GT factor name or GT factor count enters this construction.
+
+Generate views and their manifest:
 
 ```bash
-python -m mvext.augment --dataset both
+python run_mvcd.py --stage prepare --dataset both --seed 0
 ```
 
-Create the frozen CLIP feature caches:
-
-```bash
-python -m mvext.encoders --dataset both
-```
-
-These commands create the following unincluded artifacts:
+Important generated files are:
 
 ```text
-mvext_data/MAG/manifest.csv
-mvext_data/MAG/clip_cache.pt
-mvext_data/Lung/manifest.csv
-mvext_data/Lung/clip_cache.pt
+mvext_data/<dataset>/text_view_spec.json
+mvext_data/<dataset>/manifest.csv
+mvext_data/<dataset>/clip_cache.pt
 mvext_data/<dataset>/views/...
 ```
 
-The run4 text views use dataset-specific semantic keyword masks. The masks are
-defined in `mvext/augment.py`; generated view files are derived data and can be
-recreated from the included inputs.
+`text_view_spec.json` records the ranking, selected terms and preprocessing
+settings. These derived artifacts are ignored by Git and can be regenerated.
 
-## Running node discovery
+## Running MVCD
 
-This running part has independent preparation, training and naming stages. Commands are run from the repository root. If you want to run the phase at once, see **Run every stage at once** part below. (GT mapping and metric part is still saparated.)
-
-### Phase A: learn the blocks
+Commands below run from the repository root. Use `CUDA_VISIBLE_DEVICES` to
+select a GPU, for example:
 
 ```bash
-python run_selected.py --stage train --dataset both --seed 0
+CUDA_VISIBLE_DEVICES=0 python run_mvcd.py --stage train --dataset both --seed 0
+```
+
+### 1. Learn factor blocks
+
+After preparing views, run:
+
+```bash
+python run_mvcd.py --stage train --dataset both --seed 0
 ```
 
 This writes:
 
 ```text
-outputs/run4_selected/blocks/seed00/MAG/blocks.pt
-outputs/run4_selected/blocks/seed00/Lung/blocks.pt
+outputs/mvcd/blocks/seed00/MAG/blocks.pt
+outputs/mvcd/blocks/seed00/Lung/blocks.pt
 ```
 
-Because the selected configuration has the validity gate disabled, all defined
-view subsets enter final training. `blocks.pt` is specific to the dataset and
-outer seed.
+The validity gate is disabled in the paper configuration, so all nine subsets
+enter full-data training.
 
-### Phase B: name the factors
+### 2. Name factors
 
 ```bash
-python run_selected.py --stage name --dataset both --seed 0
+python run_mvcd.py --stage name --dataset both --seed 0
 ```
 
-The important outputs are:
+Important outputs are:
 
 ```text
-outputs/MAG9_mv/run4_selected_MAG_seed00/iter1_factors.json
-outputs/Lung4_mv/run4_selected_Lung_seed00/iter1_factors.json
-outputs/<dataset-dir>/<run-id>/<model>/graph_iter1_<timestamp>.json
+outputs/MAG9_mv/mvcd_MAG_seed00/iter1_factors.json
+outputs/MAG9_mv/mvcd_MAG_seed00/top_pairs.json
+outputs/Lung4_mv/mvcd_Lung_seed00/iter1_factors.json
+outputs/Lung4_mv/mvcd_Lung_seed00/top_pairs.json
 ```
 
-The graph contains the target and discovered factor nodes but no edges. Reusing
-the same run ID also reuses `iter1_factors.json`.
+Incomplete factor-name/criteria responses are retried up to three additional
+times. Reusing the same run ID reuses the completed factor file.
 
-### Alternative : Run every stage at once
-
-After exporting `API_KEY`, preparation, training and naming can be run together:
+### 3. Quantify factors and estimate a PAG
 
 ```bash
-python run_selected.py --stage all --dataset both --seed 0
+python run_mvcd.py --stage graph --dataset both --seed 0
 ```
 
-Use `CUDA_VISIBLE_DEVICES` to select a GPU:
+Gemini assigns `-1`, `0` or `1` to every named factor for every sample. The
+observed `score` column is appended, and FCI is run with the KCI independence
+test and `alpha=0.05`. Counterfactual iteration 2 is not part of this command.
+
+```text
+outputs/<dataset-dir>/mvcd_<dataset>_seed00/iter1_annotation_results.csv
+outputs/<dataset-dir>/mvcd_<dataset>_seed00/fci_input_iter1.csv
+outputs/<dataset-dir>/mvcd_<dataset>_seed00/graph_iter1.json
+outputs/<dataset-dir>/mvcd_<dataset>_seed00/manifest.json
+```
+
+### Combined execution
+
+Preparation, training, naming and graph estimation can run sequentially:
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 python run_selected.py --stage all --dataset both --seed 0
+python run_mvcd.py --stage all --dataset both --seed 0
 ```
 
-To reproduce the five outer seeds, repeat Phase A and Phase B with `--seed 0`
-through `--seed 4`.
+Manual mapping and evaluation are intentionally not included in `all`. Repeat
+with `--seed 0` through `--seed 4` for the five reported outer seeds.
 
 ## Reviewing factor-to-GT mappings
 
-This release code includes dataset-wide mappings accumulated during development:
+The release includes dataset-wide mappings accumulated across the experiments:
 
 ```text
 eval/mappers/MAG.json
 eval/mappers/Lung.json
 ```
 
-Known factor names reuse their existing mappings. New names are added to the
-`unreviewed` bucket. Historical run lists were cleared in the release; syncing
-a new result records its new run ID without changing the mapping semantics.
-
-Synchronize a completed run:
+Known names reuse their reviewed mappings. New names enter `unreviewed` when a
+run is synchronized:
 
 ```bash
-python -m eval.gt_mapper sync MAG run4_selected_MAG_seed00
-python -m eval.gt_mapper sync Lung run4_selected_Lung_seed00
+python -m eval.gt_mapper sync MAG mvcd_MAG_seed00
+python -m eval.gt_mapper sync Lung mvcd_Lung_seed00
 ```
 
 Create compact review files:
@@ -191,25 +218,22 @@ python eval/mappers/mapping_helper.py init MAG
 python eval/mappers/mapping_helper.py init Lung
 ```
 
-Edit `MAG_unreviewed_helper.json` or `Lung_unreviewed_helper.json`. Each value is
-one of the following:
+Edit `MAG_unreviewed_helper.json` or `Lung_unreviewed_helper.json`:
 
 ```json
 {
-  "unreviewed factor": null,
+  "not reviewed": null,
   "spurious factor": [],
   "single-GT factor": [2],
   "multi-GT factor": [3, 2]
 }
 ```
 
-- `null`: not reviewed yet
-- `[]`: map to null
-- one code: map to one GT node
-- multiple codes: the first is the primary mapping used by NP/NR/NF; the rest
-  are recorded as `compound.secondary`
-
-Code tables:
+- `null`: not reviewed;
+- `[]`: map to null;
+- one code: primary GT mapping;
+- multiple codes: first is primary, remaining codes are recorded as
+  `compound.secondary` and do not alter the paper metrics.
 
 | Dataset | Codes |
 |---|---|
@@ -221,44 +245,43 @@ Validate and apply the review:
 ```bash
 python eval/mappers/mapping_helper.py check MAG
 python eval/mappers/mapping_helper.py apply MAG
-
 python eval/mappers/mapping_helper.py check Lung
 python eval/mappers/mapping_helper.py apply Lung
 ```
 
-## Node evaluation
+## Evaluation
 
-After all new names have been reviewed:
+After graph generation and mapping review:
 
 ```bash
-python -m eval.node_metrics MAG run4_selected_MAG_seed00
-python -m eval.node_metrics Lung run4_selected_Lung_seed00
+python run_mvcd.py --stage evaluate --dataset both --seed 0
 ```
 
-The evaluator reports NP, NR and NF together with predicted and matched node
-counts.
+The evaluator writes `metrics_iter1.json` in each run directory. NP/NR/NF
+include the observed target node. Predicted and matched factor diagnostics
+exclude the target. AP/AR/AF compare adjacency on the matched-node subgraph.
+ESHD adds matched-subgraph SHD, GT edges incident to missing nodes, predicted
+edges incident to spurious nodes, and one penalty per missing/spurious node.
+Only the paper's GT-reference metrics are exposed; faithful and global variants
+from development experiments are not included.
 
-Compound secondary mappings are diagnostic annotations and are not added to the
-matched set.
-
-## Scope of retained MLLM-CD utilities
+## Retained MLLM-CD code
 
 `utils.py`, `causal_graph_utils.py` and `counterfactual_utils.py` retain the
-original MLLM-CD-style annotation, FCI and counterfactual-refinement utilities.
-They are kept to preserve the extension path toward full causal graph discovery.
-Those stages are outside the evaluated scope of this release; the selected
-configuration and `run_selected.py` stop after node discovery.
+original MLLM-CD annotation, FCI and counterfactual-refinement utilities. MVCD
+uses the annotation and FCI portions. Counterfactual refinement remains
+available for future extension but is outside the released paper pipeline.
 
 ## Checks
 
-Run the dependency-free release contract check after installing the environment:
+After installing the environment, run:
 
 ```bash
 python tests/test_release.py
 ```
 
-It verifies the selected configuration, mapper schemas, cleared provenance,
-node metric formula and raw image references.
+The check covers the paper configuration, deterministic text vocabulary/view
+construction, mapper schemas, graph metrics and raw image references.
 
 ## References
 

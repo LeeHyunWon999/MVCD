@@ -147,13 +147,20 @@
       "green skin presence": [],
       "red blush area": [],
       "Coloration and Pattern Atypicality": [],
-      "External Gloss and Color": []
+      "External Gloss and Color": [],
+      "Apple Surface Redness": [],
+      "Fruit Color and Maturity": [],
+      "Red Delicious Variety": [],
+      "Red Gala Variety": [],
+      "Red Skin Dominance": [],
+      "Red Skin Presence": []
     },
     "size": {
       "Size and Severity": [],
       "Fruit Size Interpretation": [],
       "Apple Size Variation": [],
-      "Fruit Size or Weight": []
+      "Fruit Size or Weight": [],
+      "Apple Specimen Size": []
     },
     "defects": {
       "Apple Rot Lesions": [],
@@ -1103,7 +1110,57 @@
       "Factor 4: Surface Damage and Superficial Integrity": [],
       "Factor 5: Deep and Significant Skin Breach": [],
       "Factor 6: Overall Decay and Contamination": [],
-      "Musty Rotten Condition": []
+      "Musty Rotten Condition": [],
+      "Apple Brown Spot Pattern": [],
+      "Apple Rot Spot Severity": [],
+      "Apple Surface Condition": [],
+      "Apple Surface Rot Severity": [],
+      "Apple Surface Spotting": [],
+      "Aroma Appeal and Freshness": [],
+      "Bitten": [],
+      "Bitter Pit Pitting": [],
+      "Blemish Character and Type": [],
+      "Blemish Spot Defect": [],
+      "Brown Surface Scabbing": [],
+      "Dark Rot Spots": [],
+      "Decay and Necrotic Patches": [],
+      "Degree of Brown Decay Spots": [],
+      "Extent of Surface Damage": [],
+      "Exterior Decay Discoloration": [],
+      "Exterior Fruit Integrity": [],
+      "Fissure Spot Presence": [],
+      "Flavor Defect Presence": [],
+      "Fruit Decay Type": [],
+      "Fruit Freshness and Rot": [],
+      "Fruit Surface Imperfections": [],
+      "Internal Biological Decay": [],
+      "Internal Biological Decay (2)": [],
+      "Internal Decay Indication": [],
+      "Lesion Penetration Depth": [],
+      "Lesion or Split Severity": [],
+      "Localized Blemish Severity": [],
+      "Presence of Bacterial/Viral Disease": [],
+      "Presence of Internal Spoilage": [],
+      "Rot and Decomposition": [],
+      "Severe Surface Fissuring": [],
+      "Signs of Decay": [],
+      "Skin Circular Spotting": [],
+      "Skin Integrit": [],
+      "Skin Scabbing Damage": [],
+      "Soft Spot Blemishes": [],
+      "Split or Crack Scars": [],
+      "Spot Rot": [],
+      "Structural Damage Severity": [],
+      "Structural Wounds or Cracks": [],
+      "Surface Mold and Degradation": [],
+      "Surface Rot and Blemishes": [],
+      "Surface Rot or Decay": [],
+      "Surface Rot/Browning": [],
+      "Surface Soft Rot Decay": [],
+      "Surface Soundness": [],
+      "Symptom Count": [],
+      "Type and Severity of Surface Decay": [],
+      "freshness state": []
     },
     "aroma": {
       "Apple Aroma Purity": [],
@@ -1272,7 +1329,11 @@
       "freshness aroma-flavor (absence of rot)": [],
       "Aromatic Defects and Off-Notes": [],
       "Odor Presence and Appeal": [],
-      "Apple Freshness Aroma": []
+      "Apple Freshness Aroma": [],
+      "Aroma and Off-Flavor": [],
+      "Musty Aroma / Rotten Smell": [],
+      "Musty versus Inviting Aroma": [],
+      "Presence of Musty Aroma": []
     },
     "taste": {
       "Overall Flavor and Aroma Pleasantness": [],
@@ -1684,7 +1745,14 @@
       "Presence of Sweetness": [],
       "Acidity Balance": [],
       "Factor 3: Sweet-Sour Balance": [],
-      "Sweet Sour Balance": []
+      "Sweet Sour Balance": [],
+      "Apple Acidity Balance": [],
+      "Internal Flavor Decay": [],
+      "Internal Flavor Decay (2)": [],
+      "Sour Taste Predominance": [],
+      "Sweetness and Nutritional Value": [],
+      "Sweetness or Sugar Content": [],
+      "Taste Balance: Sweetness vs. Sourness": []
     },
     "juiciness": {
       "Texture Moisture Level": [],
@@ -1876,7 +1944,11 @@
       "ripeness texture and juice": [],
       "Moisture/Texture": [],
       "Moisture and Palatable Juiciness": [],
-      "Factor 2: Juiciness and Texture": []
+      "Factor 2: Juiciness and Texture": [],
+      "Apple Moisture and Juiciness": [],
+      "Flesh Moisture Level (2)": [],
+      "Fruit Moisture and Texture": [],
+      "Moisture Content Description": []
     },
     "nutrition": {
       "Apple Nutrient Concentration": [],
@@ -2087,7 +2159,12 @@
       "nutrient concentration": [],
       "nutritional nutrient content": [],
       "Fiber/Nutrient Levels": [],
-      "Factor 1: Nutritional and Sensorial Integrity": []
+      "Factor 1: Nutritional and Sensorial Integrity": [],
+      "High Nutrient Reporting": [],
+      "Nutritional Nutrient Content": [],
+      "Nutritional Value & Market Potential": [],
+      "Nutritional Value Level": [],
+      "Nutritional Value and Market Potential": []
     },
     "recmd": {
       "Market Potential and Recognition": [],
@@ -2445,7 +2522,13 @@
       "Market Potential (2)": [],
       "Commercial Viability and Market Perception": [],
       "Expected Commercial Acceptance": [],
-      "Factor 7: Commercial Viability": []
+      "Factor 7: Commercial Viability": [],
+      "Commercial Feasibility": [],
+      "Commercial Potential Focus": [],
+      "Commercial Potential Sentiment": [],
+      "Commercial Viability and Investment Potential": [],
+      "Expressed Market Potential": [],
+      "Projected Commercial Return": []
     },
     "score": {
       "score": []
@@ -3668,6 +3751,34 @@
         "defects"
       ],
       "runs": []
+    },
+    "Nutritional Value & Market Potential": {
+      "primary": "nutrition",
+      "runs": [],
+      "secondary": [
+        "recmd"
+      ]
+    },
+    "Nutritional Value and Market Potential": {
+      "primary": "nutrition",
+      "runs": [],
+      "secondary": [
+        "recmd"
+      ]
+    },
+    "Red Delicious Variety": {
+      "primary": "color",
+      "runs": [],
+      "secondary": [
+        "taste"
+      ]
+    },
+    "Sweetness and Nutritional Value": {
+      "primary": "taste",
+      "runs": [],
+      "secondary": [
+        "nutrition"
+      ]
     }
   },
   "nulled": {
@@ -4048,7 +4159,13 @@
     "Abrasive Scoring Patterns": [],
     "Misleading Freshness Indicators": [],
     "Factor 8: Visual Confirmation and Consistency Across Channels": [],
-    "Apple Exterior Structure": []
+    "Apple Exterior Structure": [],
+    "Background Scene Realism": [],
+    "Flesh Quality Evaluation": [],
+    "Fruit Maturity / Ripeness": [],
+    "Inherent Cultivar Potential": [],
+    "Internal Eating Sensation": [],
+    "Surface Texture Severity": []
   },
   "unreviewed": {}
 }

@@ -1,4 +1,4 @@
-"""Small JSON artifact helpers shared by run4 entry points."""
+"""Small artifact helpers shared by MVCD entry points."""
 import json
 import os
 import shutil

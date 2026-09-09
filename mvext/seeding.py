@@ -1,4 +1,4 @@
-"""Outer-seed handling shared by run4 and the original baselines."""
+"""Outer-seed handling shared by MVCD and retained MLLM-CD code."""
 import os
 import random
 

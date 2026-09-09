@@ -1,94 +1,37 @@
-"""Shared configuration for the MultiView-CRL extension of MLLM-CD.
+"""Shared configuration for MVCD."""
 
-View structure is DATASET-SPECIFIC now: MAG splits text into 5 semantic
-categories (taste/aroma/juiciness/nutrition/market) to expose more text factors,
-while Lung keeps its 2 natural columns (history/demographics). Use the accessor
-functions (views/subsets/image_views/text_views/n_views) with a dataset key.
-"""
-
-# --- per-dataset view definitions ----------------------------------------
-# Index position IS the view id used everywhere for that dataset.
-# MAG: orig views are EXCLUDED from MultiView (used only downstream for naming /
-# augmentation, pulled from meta). Text uses 10 "pair-mask" views: each removes a
-# PAIR of the 5 categories (taste/aroma/juic/nutr/market) and keeps the other 3,
-# so views differ substantially (group change) -- a subset's shared block is the
-# intersection of kept categories. txt_pm_XY = remove categories X and Y.
-_VIEWS = {
-    "MAG": [
-        "img_color",       # 0  average-color patch (color)
-        "img_hpf",         # 1  high-pass (shape/edges/texture)
-        "img_silhouette",  # 2  binary silhouette (size/shape)
-        "txt_pm_ta",       # 3  remove taste,aroma  -> keep juic,nutr,market
-        "txt_pm_tj",       # 4  remove taste,juic
-        "txt_pm_tn",       # 5  remove taste,nutr
-        "txt_pm_tm",       # 6  remove taste,market
-        "txt_pm_aj",       # 7  remove aroma,juic
-        "txt_pm_an",       # 8  remove aroma,nutr
-        "txt_pm_am",       # 9  remove aroma,market
-        "txt_pm_jn",       # 10 remove juic,nutr
-        "txt_pm_jm",       # 11 remove juic,market
-        "txt_pm_nm",       # 12 remove nutr,market
-    ],
-    # Lung: images (color/hpf/silhouette) + 6 pair-mask views over the 4 GT text
-    # factors (gender/age/smoking/lesion), codes g,a,s,l. txt_pm_XY removes X and Y.
-    "Lung": [
-        "img_color", "img_hpf", "img_silhouette",                # 0,1,2
-        "txt_pm_ga", "txt_pm_gs", "txt_pm_gl",                   # 3,4,5
-        "txt_pm_as", "txt_pm_al", "txt_pm_sl",                   # 6,7,8
-    ],
-}
-
-# View subsets. MAG: image pairs (color/hpf/silhouette) + text A/B subsets over
-# the 10 pair-mask views (indices 3..12 = txt_pm_ta..txt_pm_nm).
-#   Strategy A (isolate one factor, intersection=1): 2 views sharing only X.
-#   Strategy B (2-factor block for decomposition, intersection=2).
-_SUBSETS = {
-    "MAG": [
-        # image (orig excluded; images are ~1-D so these likely give 1 factor)
-        (0, 1), (0, 2), (1, 2),
-        # text A -- isolate each factor
-        (7, 12),   # taste   : rm(aroma,juic) & rm(nutr,market)
-        (4, 12),   # aroma   : rm(taste,juic) & rm(nutr,market)
-        (3, 12),   # juic    : rm(taste,aroma) & rm(nutr,market)
-        (3, 11),   # nutr    : rm(taste,aroma) & rm(juic,market)
-        (3, 10),   # market  : rm(taste,aroma) & rm(juic,nutr)
-        # text B -- 2-factor blocks to decompose
-        (10, 11),  # {taste,aroma}  : rm(juic,nutr) & rm(juic,market)
-        (3, 6),    # {juic,nutr}    : rm(taste,aroma) & rm(taste,market)
-        (4, 5),    # {aroma,market} : rm(taste,juic) & rm(taste,nutr)
-    ],
-    # Lung: 4 GT text factors -> A-subsets only (isolate each). Views 3..8 =
-    # rm_ga,rm_gs,rm_gl,rm_as,rm_al,rm_sl. To isolate X keep X, remove the other 3
-    # via two views whose removed pairs cover them. (No B/decompose: 4 categories
-    # can't form a clean 2-view 2-factor block.)
-    "Lung": [
-        (0, 1), (0, 2), (1, 2),        # image pairs
-        (6, 7),                        # gender : rm_as & rm_al
-        (4, 5),                        # age    : rm_gs & rm_gl
-        (3, 5),                        # smoking: rm_ga & rm_gl
-        (3, 4),                        # lesion : rm_ga & rm_gs
-    ],
-}
+# --- paper view definition ----------------------------------------------
+# Three image views plus two complementary text views for each of the six
+# corpus-frequency terms. The construction does not use GT factor names/counts.
+TEXT_KEYWORD_METHOD = "frequency"
+TEXT_KEYWORD_K = 6
 
 
 def views(dataset):
-    return _VIEWS[dataset]
+    if dataset not in ("MAG", "Lung"):
+        raise ValueError(dataset)
+    return ["img_color", "img_hpf", "img_silhouette", *(
+        f"txt_iso_{index:02d}_{side}"
+        for index in range(TEXT_KEYWORD_K) for side in ("a", "b"))]
 
 
 def n_views(dataset):
-    return len(_VIEWS[dataset])
+    return len(views(dataset))
 
 
 def subsets(dataset):
-    return _SUBSETS[dataset]
+    if dataset not in ("MAG", "Lung"):
+        raise ValueError(dataset)
+    return [(0, 1), (0, 2), (1, 2), *(
+        (3 + 2 * index, 4 + 2 * index) for index in range(TEXT_KEYWORD_K))]
 
 
 def image_views(dataset):
-    return [i for i, v in enumerate(_VIEWS[dataset]) if v.startswith("img_")]
+    return [i for i, v in enumerate(views(dataset)) if v.startswith("img_")]
 
 
 def text_views(dataset):
-    return [i for i, v in enumerate(_VIEWS[dataset]) if v.startswith("txt_")]
+    return [i for i, v in enumerate(views(dataset)) if v.startswith("txt_")]
 
 
 # --- MultiView / encoder hyperparameters (short-term defaults) ------------
@@ -123,8 +66,7 @@ TEXT_FEATURE = "tokens_mean"
 
 # --- content size (block dimensionality), PER-SUBSET like the MultiView authors -
 # The paper/authors assign each subset its own content size = the number of latents
-# its views share (Eq 2.2). We mirror that with our DESIGN intersection sizes:
-#   text A (isolate 1 factor) -> 1, text B (2 factors) -> 2, image pair -> 2.
+# its views share (Eq 2.2). The released paper configuration learns this size.
 #   CONTENT_SIZE_MODE:
 #     "per_subset" (default) -> _CONTENT_SIZES below (reproduces authors' per-subset k)
 #     "uniform"              -> CONTENT_SIZE_UNIFORM for every subset
@@ -147,15 +89,9 @@ VARIABLE_L0_ALPHA = 0.005
 VALIDITY_CONTENT_SIZE_MODE = None
 
 _CONTENT_SIZES = {
-    "MAG": {
-        (0, 1): 2, (0, 2): 2, (1, 2): 2,                         # image pairs
-        (7, 12): 1, (4, 12): 1, (3, 12): 1, (3, 11): 1, (3, 10): 1,  # text A (isolate)
-        (10, 11): 2, (3, 6): 2, (4, 5): 2,                       # text B (2-factor)
-    },
-    "Lung": {     # image=2, text A-isolate=1
-        (0, 1): 2, (0, 2): 2, (1, 2): 2,
-        (6, 7): 1, (4, 5): 1, (3, 5): 1, (3, 4): 1,
-    },
+    dataset: {subset: (2 if subset[0] < 3 else 1)
+              for subset in subsets(dataset)}
+    for dataset in ("MAG", "Lung")
 }
 
 # Decomposition is an independent on/off knob (NOT tied to content size):
@@ -207,7 +143,7 @@ STABILITY_CUT = 0.60         # min mean |rho| of block across seeds
 N_PERM = 1000                # permutations per test
 N_SEEDS = 3                  # seeds for stability
 N_FOLDS = 5                  # CV folds
-RUN_SEED = 0                 # outer experiment seed; run4 ablates {0,1,2,3,4}
+RUN_SEED = 0                 # paper experiments use outer seeds {0,1,2,3,4}
 VALIDITY_STEPS = 3000        # training steps in validity (1D)
 FINALIZE_STEPS = 3000        # training steps in finalize (full-data retrain)
 DEDUP_THRESHOLD = 0.9        # merge atoms with |corr| > this before LLM naming

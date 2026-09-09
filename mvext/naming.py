@@ -11,9 +11,12 @@ Helper.annotate_all_samples (LLM 1/0/-1) exactly like the original CFD.
 The annotation step (LLM 1/0/-1) is kept separate so it can later be swapped for
 block-projection quantification (follow-up goal); see quantify_* below.
 """
+from pathlib import Path
+
 import torch
 
 from mvext import config as C
+from mvext.artifacts import write_json
 from mvext.encoders import load_cache  # noqa: F401  (kept for parity/imports)
 
 def load_blocks(dataset, root=None):
@@ -183,6 +186,15 @@ Output each factor in this exact format:
     return helper.extract_factors_from_response(resp["text"])
 
 
+def _complete_factor(factor):
+    criteria = factor.get("criteria") if isinstance(factor, dict) else None
+    return (isinstance(factor.get("name"), str) and bool(factor["name"].strip())
+            and isinstance(criteria, dict)
+            and set(criteria) == {"positive", "neutral", "negative"}
+            and all(isinstance(value, str) and value.strip()
+                    for value in criteria.values()))
+
+
 def discover_factors_from_blocks(helper, meta, blocks, dataset, top_n=None,
                                  iter=1, quant=None, distinct_first=None):
     """Name each deduped block via block-contrastive naming.
@@ -204,12 +216,21 @@ def discover_factors_from_blocks(helper, meta, blocks, dataset, top_n=None,
         pairs_by_block[subset] = pairs
         hint = used if distinct_first else None
         prompt, imgs = build_naming_prompt(helper, meta, pairs, dataset, subset, used_factors=hint)
-        resp = helper.generate(prompt, img_path=imgs)
-        facs = helper.extract_factors_from_response(resp["text"])
-        fac = facs[0] if facs else {"name": f"Factor {b+1}", "criteria": {}}
+        fac = None
+        for attempt in range(4):  # initial request plus three repair attempts
+            resp = helper.generate(prompt, img_path=imgs)
+            facs = helper.extract_factors_from_response((resp or {}).get("text", ""))
+            if facs and _complete_factor(facs[0]):
+                fac = facs[0]
+                break
+            write_json(Path(helper.output_path) / "factor_errors" /
+                       f"block_{b:02d}_attempt_{attempt + 1}.json",
+                       {"error": "factor criteria must be three non-empty strings"})
+        if fac is None:
+            raise ValueError(f"block {b}: invalid factor response after four attempts")
         print(f"  block {subset}: {fac['name']}")
         per_block.append(fac)
-        all_factors.extend(facs)
+        all_factors.append(fac)
         used.append(fac["name"])
 
     if quant == "multiview":
