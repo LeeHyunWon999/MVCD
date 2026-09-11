@@ -1,5 +1,7 @@
 # MVCD: Multi-View Causal Discovery
 
+![Figure](overview.pdf)
+
 This repository contains the implementation accompanying *Multi-View Factor Blocks as a Front End for MLLM-Based Multimodal Causal Discovery*. MVCD replaces
 the CLIP-distance factor proposal stage of
 [MLLM-CD](https://arxiv.org/abs/2509.17784) with factor blocks learned from
