@@ -55,6 +55,8 @@ The naming mode and FCI quantification are deliberately separate. Naming keeps
 one factor per learned block without an LLM merge. Only after the names are
 fixed does Gemini assign every sample a value in `{-1, 0, 1}` for FCI.
 
+The settings named 'Validity gate' and 'Decomposition / rank normalization / deduplication' are currently under development, and are not included in the paper.
+
 ## Environment
 
 CUDA 12.1 and Python 3.10 were used for the reported experiments.
